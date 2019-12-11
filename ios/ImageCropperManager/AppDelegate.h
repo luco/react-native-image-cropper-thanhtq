@@ -1,19 +1,15 @@
 //
-//  ImageCroperManager.h
+//  AppDelegate.h
 //  TOCropViewControllerExample
 //
-//  Created by Trương Thành on 2/15/19.
-//  Copyright © 2019 Tim Oliver. All rights reserved.
+//  Created by Tim Oliver on 3/19/15.
+//  Copyright (c) 2015 Tim Oliver. All rights reserved.
 //
 
 #import <UIKit/UIKit.h>
-#import <React/RCTBridgeModule.h>
-#import <RCTImageLoader.h>
 
-NS_ASSUME_NONNULL_BEGIN
+@interface AppDelegate : UIResponder <UIApplicationDelegate>
 
-@interface ImageCropperManager : UINavigationController <RCTBridgeModule>
+@property (strong, nonatomic) UIWindow *window;
 
 @end
-
-NS_ASSUME_NONNULL_END
