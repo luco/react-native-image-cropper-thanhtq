@@ -69,9 +69,9 @@ RCT_EXPORT_MODULE();
     //cropController.rotateButtonsHidden = YES;
     //cropController.rotateClockwiseButtonHidden = NO;
     
-    //cropController.doneButtonTitle = @"Title";
-    //cropController.cancelButtonTitle = @"Title";
-    
+//    cropController.doneButtonTitle = @"Title";
+//    cropController.cancelButtonTitle = @"Title";
+//
     // -- Uncomment this line of code to show a confirmation dialog when cancelling --
     //cropController.showCancelConfirmationDialog = YES;
     
@@ -102,7 +102,6 @@ RCT_EXPORT_METHOD(showViewCrop:(NSString *)urlImage options:(NSDictionary *)opti
     NSString *path = [self.options valueForKey:@"path"];
     NSURLRequest *imageUrlrequest = [NSURLRequest requestWithURL:[NSURL URLWithString:path]];
     
-    
     [self.bridge.imageLoader loadImageWithURLRequest:imageUrlrequest callback:^(NSError *error, UIImage *image) {
         [self handleImageLoad:image];
     }];
@@ -117,6 +116,9 @@ RCT_EXPORT_METHOD(showViewCrop:(NSString *)urlImage options:(NSDictionary *)opti
 
     TOCropViewController *cropViewController = [[TOCropViewController alloc] initWithImage:image];
     cropViewController.delegate = self;
+    cropViewController.title = @"Recortar Imagem";
+    cropViewController.doneButtonTitle = @"Salvar";
+    cropViewController.cancelButtonTitle = @"Cancelar";
 
     dispatch_async(dispatch_get_main_queue(), ^{
         [topViewController presentViewController:cropViewController animated:YES completion:nil];
@@ -142,13 +144,39 @@ RCT_EXPORT_METHOD(showViewCrop:(NSString *)urlImage options:(NSDictionary *)opti
 {
     self.croppedFrame = cropRect;
     self.angle = angle;
-    NSString *check = [self encodeToBase64String:image];
-    if(check){
-        self.callback(@[check]);
+    
+    NSTimeInterval timeStamp = [[NSDate date] timeIntervalSince1970];
+    NSNumber *timeStampObj = [NSNumber numberWithDouble: timeStamp];
+    NSMutableString *imageName = [NSMutableString stringWithFormat:@"temp_%@", timeStampObj];
+    
+    NSURL *tmpDirURL = [NSURL fileURLWithPath:NSTemporaryDirectory() isDirectory:YES];
+    NSURL *fileURL = [[tmpDirURL URLByAppendingPathComponent:imageName] URLByAppendingPathExtension:@"png"];
+    
+    //NSURL *furl = [NSURL fileURLWithPath:[NSTemporaryDirectory() stringByAppendingPathComponent:imageName]];
+    
+    NSLog(@"fileURL: %@", [fileURL path]);
+    NSData *pngData = UIImagePNGRepresentation(image);
+    
+    [pngData writeToFile:[fileURL path] atomically:YES];
+    
+    if(fileURL){
+        
+        NSLog(@"Image saved");
+        //self.callback(@[check]);
+        self.callback(@[[fileURL path]]);
     } else {
         self.callback(@[@{@"error": @"Crop error"}]);
     }
+    
     [self updateImageViewWithImage:image fromCropViewController:cropViewController];
+    
+//    NSString *check = [self encodeToBase64String:image];
+//    if(check){
+//        self.callback(@[check]);
+//    } else {
+//        self.callback(@[@{@"error": @"Crop error"}]);
+//    }
+//    [self updateImageViewWithImage:image fromCropViewController:cropViewController];
 }
 
 - (void)cropViewController:(TOCropViewController *)cropViewController didCropToCircularImage:(UIImage *)image withRect:(CGRect)cropRect angle:(NSInteger)angle
