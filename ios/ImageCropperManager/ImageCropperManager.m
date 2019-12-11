@@ -13,6 +13,7 @@
 #import <AssetsLibrary/AssetsLibrary.h>
 #import <AVFoundation/AVFoundation.h>
 #import <React/RCTUtils.h>
+#import <UIKit/UIKit.h>
 #import "AppDelegate.h"
 
 @interface ImageCropperManager () <UINavigationControllerDelegate, UIImagePickerControllerDelegate, TOCropViewControllerDelegate>
@@ -92,35 +93,33 @@ RCT_EXPORT_MODULE();
     return [UIImagePNGRepresentation(image) base64EncodedStringWithOptions:NSDataBase64EncodingEndLineWithCarriageReturn];
 }
 
+@synthesize bridge = _bridge;
+
 RCT_EXPORT_METHOD(showViewCrop:(NSString *)urlImage options:(NSDictionary *)options callback:(RCTResponseSenderBlock)callback){
     self.callback = callback; // Save the callback so we can use it from the delegate methods
     self.options = options;
-    //NSString *urlBase64 = [self.options valueForKey:@"urlBase64Image"];
-    //UIImage *image = [self decodeBase64ToImage:urlBase64];
+
     NSString *path = [self.options valueForKey:@"path"];
-    NSURL *localurl = [NSURL URLWithString:path];
-    NSData *data = [NSData dataWithContentsOfURL:localurl];
-    UIImage *image = [[UIImage alloc] initWithData:data];
-    self.croppingStyle = TOCropViewCroppingStyleDefault;
+    NSURLRequest *imageUrlrequest = [NSURLRequest requestWithURL:[NSURL URLWithString:path]];
     
-    TOCropViewController *cropController = [[TOCropViewController alloc] initWithCroppingStyle:self.croppingStyle image:image];
-    cropController.title = @"Crop Image";
-    cropController.allowedAspectRatios = @[@(TOCropViewControllerAspectRatioPresetSquare)];
-    cropController.aspectRatioPreset = TOCropViewControllerAspectRatioPresetSquare; //Set the initial aspect ratio as a square
-    // -- Uncomment this line of code to place the toolbar at the top of the view controller --
-    //cropController.toolbarPosition = TOCropViewControllerToolbarPositionTop;
-    BOOL aspectRatioPickerButtonHidden = [[self.options objectForKey:@"aspectRatioPickerButtonHidden"] boolValue] ? YES: NO;
-    cropController.aspectRatioPickerButtonHidden = aspectRatioPickerButtonHidden;
-    // The crop box is locked to the aspect ratio and can't be resized away from it
-    BOOL aspectRatioLockEnabled = [[self.options objectForKey:@"aspectRatioLockEnabled"] boolValue] ? YES: NO;
-    cropController.aspectRatioLockEnabled = aspectRatioLockEnabled;
-    cropController.delegate = self;
-    AppDelegate *share = (AppDelegate *)[UIApplication sharedApplication].delegate;
-    UINavigationController *nav = (UINavigationController *) share.window.rootViewController;
-    UIViewController *current = [self currentViewController];
+    
+    [self.bridge.imageLoader loadImageWithURLRequest:imageUrlrequest callback:^(NSError *error, UIImage *image) {
+        [self handleImageLoad:image];
+    }];
+}
+
+
+
+- (void)handleImageLoad:(UIImage *)image {
+    
+    UIViewController *topViewController = [[[[UIApplication sharedApplication] delegate] window] rootViewController];
+    while (topViewController.presentedViewController) topViewController = topViewController.presentedViewController;
+
+    TOCropViewController *cropViewController = [[TOCropViewController alloc] initWithImage:image];
+    cropViewController.delegate = self;
+
     dispatch_async(dispatch_get_main_queue(), ^{
-        [nav presentViewController:cropController animated:YES completion:nil];
-        //[self presentViewController:cropController animated:YES completion:nil];
+        [topViewController presentViewController:cropViewController animated:YES completion:nil];
     });
 }
 
