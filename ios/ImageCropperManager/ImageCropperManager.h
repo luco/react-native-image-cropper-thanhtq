@@ -8,6 +8,7 @@
 
 #import <UIKit/UIKit.h>
 #import <React/RCTBridgeModule.h>
+#import <RCTImageLoader.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
